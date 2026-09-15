@@ -116,6 +116,7 @@ Helper 查詢是 **fail-closed**：如果 Helper 不存在／server error／sche
 - **沒有 semantic near-duplicate 偵測**：沒有 embedding／語意相似度比對，仍需人工。
 - **沒有 conflict taxonomy**：conflict_tags 目前沒有正式 vocabulary，AI 對明顯先天衝突（例如同一物種的互斥品種特徵）有時仍會漏標，建議只標高信心衝突，不要為了完整性硬建一套龐大 taxonomy。
 - **沒有 importance distribution gate**：Prompt 要求 core/support/subtle 不要整批一樣，但後端不強制檢查分布，仍需人工抽查。
+- **沒有跨 dimension 一致性檢查**：例如 flower 的 `flower-species`（花種大分類）跟 `breed`（具體品種）是兩個獨立 batch 各自生成，系統不會自動檢查兩者是否對得起來——如果 breed 那批出現了某個花種（例如 zinnia、cosmos），但 flower-species 那批沒有對應的上層選項，這筆資料在「先選花種、再選品種」的 UI 邏輯下會變成孤兒，選不到。這種跨 dimension 的資料完整性，目前只能靠人工在生成後交叉比對，Admission Gates 和 Dimension Gate 都不會檢查。
 - **display_label 空值不是硬 FAIL**：Prompt 有要求，後端目前寬容處理。
 
 ---
