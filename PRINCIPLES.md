@@ -167,3 +167,28 @@ Helper 查詢是 **fail-closed**：如果 Helper 不存在／server error／sche
 ```
 
 目前最大的技術債是：候選 CSV（13,799 筆）是複合短語（例如「銀色西施犬鬍鬚」＝品種＋毛色＋部位黏在一起），沒有自動化流程把它拆解成乾淨的單一維度值餵給 Elements_v4，只能靠 AI Batch Prompt Helper 即時生成。這份 CSV 目前只能拿來估算「這類別大概有多少料、值不值得開 batch」，不能直接匯入。這件事排在 Dimension Gate 之後、Selection UI 之前，視情況決定是否排入開發排程（屬於中大型新功能）。
+
+---
+
+## 10. Elements_v3_2 → Elements_v4 過渡期策略
+
+目前專案處於**兩套資料源並存**的過渡期，這不是設計失誤，是刻意的漸進式切換策略：
+
+```text
+現在：
+  Elements_v3_2 ← 正式產品仍在用，QualityGuard（V3.8-6d1 沿用至今）在這裡跑全套語意品質檢查
+  Elements_v4   ← 平行建置中，用 Admission Gates 把關，逐步累積語意乾淨的新資料
+
+切換時機（量化標準）：
+  251 個 Roadmap batch 全部跑過一輪之後
+
+切換方式：
+  Elements_v4 完全取代 Elements_v3_2，V3_2 之後正式退場
+```
+
+**這代表幾件事**：
+
+- QualityGuard（`evaluateV386dElementQuality` / `validateV386dElementEntryDraft`）不是可以晾著不管的舊系統，而是**只讀 Elements_v3_2**、專門給正式產品把關的驗證邏輯，跟 Elements_v4 的 Admission Gates（`validateV4ElementDraft`）是兩條平行運作、互不影響的驗證線。
+- QualityGuard 裡的 `getV386dRoleSemanticRisk_`（判斷 composition/camera/lighting 的內容是不是誤把場景描述當成控制參數）跟 V4 那邊的 `evaluateV4RoleSemanticFit_` 概念高度相似，未來合併/切換時，V4 的驗證強度應該至少要對齊 QualityGuard 現有的檢查項目（負面語意偵測、role-semantic-fit、color-mood 風險、conflict alias 偵測），不要退步。
+- 在切換發生之前，**不要提前把 Elements_v3_2 停用或砍掉**，兩邊都要維持運作。
+- 251 個 batch 全部跑完，只是「切換的必要條件」，不等於「切換的充分條件」——實際執行切換前，仍建議先確認 Elements_v4 的資料品質（尤其是 Dimension Gate 上線後、Selection UI 可用之後）足以撐起正式產品，而不是筆數一到就自動切換。
